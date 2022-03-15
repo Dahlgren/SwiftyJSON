@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  linux:
+    if: false
+    name: Linux
+    runs-on: ubuntu-20.04
+    container:
+      image: swift:${{ matrix.swift_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        swift_version:
+          - "4.2"
+          - "5.0"
+          - "5.1"
+          - "5.2"
+          - "5.3"
+          - "5.4"
+          - "5.5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Show environments
+        run: |
+          swift --version
+      - name: Swift test
+        run: |
+          swift build
+          swift test
+
+  macOS:
+    name: macOS
+    runs-on: macOS-11
+    strategy:
+      fail-fast: false
+      matrix:
+        xcode_version:
+          - "11.7"
+          - "12.5.1"
+          - "13.2.1"
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode_version }}.app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Show environments
+        run: |
+          swift --version
+          xcodebuild -version
+#      - name: Swift test
+#        run: |
+#          swift build
+#          swift test
+      - name: SwiftyJSON macOS
+        run: |
+          set -o pipefail && xcodebuild build-for-testing test-without-building -workspace SwiftyJSON.xcworkspace -scheme "SwiftyJSON macOS" | xcpretty -c
+      - name: SwiftyJSON iOS
+        run: |
+          set -o pipefail && xcodebuild build-for-testing test-without-building -workspace SwiftyJSON.xcworkspace -scheme "SwiftyJSON iOS" -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 8' | xcpretty -c
+      - name: SwiftyJSON tvOS
+        run: |
+          set -o pipefail && xcodebuild build-for-testing test-without-building -workspace SwiftyJSON.xcworkspace -scheme "SwiftyJSON tvOS" -sdk appletvsimulator -destination 'platform=tvOS Simulator,name=Apple TV' | xcpretty -c
+      - name: SwiftyJSON watchOS
+        run: |
+          set -o pipefail && xcodebuild build -workspace SwiftyJSON.xcworkspace -scheme "SwiftyJSON watchOS" -sdk watchsimulator -destination 'platform=watchOS Simulator,name=Apple Watch Series 4 - 40mm' | xcpretty -c
+      - name: Example
+        run: |
+          set -o pipefail && xcodebuild build -workspace SwiftyJSON.xcworkspace -scheme "Example" -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 8' | xcpretty -c
